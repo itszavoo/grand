@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grand Arena Quiz</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  color: white;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: url('background.png') no-repeat center center/cover;
+}
+
+.container {
+  width: 100%;
+  max-width: 500px;
+  padding: 20px;
+  background: rgba(0,0,0,0.6);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+}
+
+h2 {
+  text-align: center;
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  background: #1e293b;
+  color: white;
+  transition: 0.2s;
+}
+
+button:hover {
+  transform: scale(1.05);
+}
+
+.correct { background: #22c55e !important; }
+.wrong { background: #ef4444 !important; }
+
+#progressBar {
+  height: 8px;
+  background: #333;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+#progress {
+  height: 100%;
+  width: 0%;
+  background: #22c55e;
+}
+
+#timer {
+  text-align: center;
+  margin: 10px 0;
+  font-size: 18px;
+}
+</style>
+</head>
+
+<body>
+
+<audio id="bgMusic" src="music.mp3" loop></audio>
+
+<div class="container">
+  <h2>Grand Arena Trial ⚔️</h2>
+  <div id="progressBar"><div id="progress"></div></div>
+  <div id="timer"></div>
+  <h3 id="question"></h3>
+  <div id="options"></div>
+</div>
+
+<script>
+document.body.addEventListener("click", () => {
+  document.getElementById("bgMusic").play();
+}, { once: true });
+
+const questions = [
+  {q:"Capital of India?", o:["Mumbai","Delhi","Chennai"], a:"Delhi"},
+  {q:"2 + 2?", o:["3","4","5"], a:"4"},
+  {q:"Sun rises in?", o:["West","East","North"], a:"East"},
+  {q:"HTML stands for?", o:["Hyper Text Markup Language","High Text Machine","Home Tool Markup"], a:"Hyper Text Markup Language"},
+  {q:"Fastest animal?", o:["Cheetah","Lion","Tiger"], a:"Cheetah"},
+  {q:"Water formula?", o:["H2O","CO2","O2"], a:"H2O"},
+  {q:"Largest planet?", o:["Earth","Mars","Jupiter"], a:"Jupiter"},
+  {q:"JS stands for?", o:["JavaScript","JavaSystem","JustScript"], a:"JavaScript"},
+  {q:"5 x 3?", o:["15","10","20"], a:"15"},
+  {q:"Color of sky?", o:["Blue","Green","Red"], a:"Blue"}
+];
+
+let shuffled = questions.sort(() => Math.random() - 0.5);
+let current = 0;
+let score = 0;
+let time = 20;
+let timer;
+
+function startTimer(){
+  clearInterval(timer);
+  time = 20;
+
+  timer = setInterval(()=>{
+    time--;
+    document.getElementById("timer").innerText = "⏱ " + time;
+
+    if(time <= 5){
+      document.getElementById("timer").style.color = "red";
+    }
+
+    if(time === 0){
+      clearInterval(timer);
+      nextQuestion();
+    }
+  },1000);
+}
+
+function loadQuestion(){
+  startTimer();
+
+  let q = shuffled[current];
+  document.getElementById("question").innerText = q.q;
+
+  let optionsDiv = document.getElementById("options");
+  optionsDiv.innerHTML = "";
+
+  q.o.forEach(opt=>{
+    let btn = document.createElement("button");
+    btn.innerText = opt;
+
+    btn.onclick = ()=>{
+      clearInterval(timer);
+
+      let buttons = document.querySelectorAll("button");
+
+      buttons.forEach(b=>{
+        b.disabled = true;
+
+        if(b.innerText === q.a){
+          b.classList.add("correct");
+        } else if(b.innerText === opt){
+          b.classList.add("wrong");
+        }
+      });
+
+      if(opt === q.a) score++;
+
+      setTimeout(nextQuestion,1500);
+    };
+
+    optionsDiv.appendChild(btn);
+  });
+
+  updateProgress();
+}
+
+function nextQuestion(){
+  current++;
+  if(current < shuffled.length){
+    loadQuestion();
+  } else {
+    showResult();
+  }
+}
+
+function updateProgress(){
+  let percent = (current / questions.length) * 100;
+  document.getElementById("progress").style.width = percent + "%";
+}
+
+function showResult(){
+  document.body.innerHTML = `
+    <canvas id="card" width="400" height="400"></canvas>
+    <br>
+    <button onclick="downloadCard()">Download Score</button>
+  `;
+
+  let canvas = document.getElementById("card");
+  let ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#0f172a";
+  ctx.fillRect(0,0,400,400);
+
+  ctx.fillStyle = "white";
+  ctx.font = "20px Arial";
+  ctx.fillText("Grand Arena Result ⚔️", 60, 100);
+
+  ctx.font = "30px Arial";
+  ctx.fillText(score + "/10", 160, 200);
+
+  ctx.font = "16px Arial";
+  ctx.fillText("Can you beat me?", 120, 260);
+}
+
+function downloadCard(){
+  let canvas = document.getElementById("card");
+  let link = document.createElement("a");
+  link.download = "score.png";
+  link.href = canvas.toDataURL();
+  link.click();
+}
+
+loadQuestion();
+</script>
+
+</body>
+</html>
